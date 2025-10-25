@@ -64,4 +64,12 @@ export class PokemonRepository {
       where: { id },
     });
   }
+
+  async upsertOne(id: number, data: CreatePokemonDto): Promise<Pokemon> {
+    return this.prismaService.pokemon.upsert({
+      where: { id },
+      update: data,
+      create: data,
+    });
+  }
 }
