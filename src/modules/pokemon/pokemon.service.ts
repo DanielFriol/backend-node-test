@@ -91,6 +91,6 @@ export class PokemonService {
 
   async importFromPokeApi(id: number): Promise<Pokemon> {
     const createPokemonDto = await this.getFromPokeApi(id);
-    return this.pokemonsRepository.createOne(createPokemonDto);
+    return this.pokemonsRepository.upsertOne(id, createPokemonDto);
   }
 }
