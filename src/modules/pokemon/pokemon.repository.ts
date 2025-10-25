@@ -12,4 +12,8 @@ export class PokemonRepository {
       data,
     });
   }
+
+  async findMany(): Promise<Pokemon[]> {
+    return this.prismaService.pokemon.findMany({});
+  }
 }

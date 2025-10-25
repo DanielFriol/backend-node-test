@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { PokemonService } from './pokemon.service';
 import { CreatePokemonDto } from './dtos/create-pokemon.dto';
 
@@ -9,5 +9,10 @@ export class PokemonController {
   @Post()
   async createOne(@Body() dto: CreatePokemonDto) {
     return this.pokemonService.createOne(dto);
+  }
+
+  @Get()
+  async findMany() {
+    return this.pokemonService.findMany();
   }
 }

@@ -10,4 +10,8 @@ export class PokemonService {
   async createOne(data: CreatePokemonDto): Promise<Pokemon> {
     return this.pokemonsRepository.createOne(data);
   }
+
+  async findMany(): Promise<Pokemon[]> {
+    return this.pokemonsRepository.findMany();
+  }
 }
