@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { PokemonService } from './pokemon.service';
 import { CreatePokemonDto } from './dtos/create-pokemon.dto';
 import { UpdatePokemonDto } from './dtos/update-pokemon.dto';
@@ -20,5 +28,10 @@ export class PokemonController {
   @Patch(':id')
   async updateOne(@Param('id') id: number, @Body() dto: UpdatePokemonDto) {
     return this.pokemonService.updateOne(id, dto);
+  }
+
+  @Delete(':id')
+  async deleteOne(@Param('id') id: number) {
+    return this.pokemonService.deleteOne(id);
   }
 }

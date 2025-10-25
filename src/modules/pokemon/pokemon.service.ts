@@ -27,4 +27,14 @@ export class PokemonService {
 
     return this.pokemonsRepository.updateOne(id, data);
   }
+
+  async deleteOne(id: number): Promise<void> {
+    const existingPokemon = await this.pokemonsRepository.findOneById(id);
+
+    if (!existingPokemon) {
+      throw new NotFoundException('Pokémon não encontrado.');
+    }
+
+    return this.pokemonsRepository.deleteOne(id);
+  }
 }

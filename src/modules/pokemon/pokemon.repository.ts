@@ -30,4 +30,10 @@ export class PokemonRepository {
       where: { id },
     });
   }
+
+  async deleteOne(id: number): Promise<void> {
+    await this.prismaService.pokemon.delete({
+      where: { id },
+    });
+  }
 }
