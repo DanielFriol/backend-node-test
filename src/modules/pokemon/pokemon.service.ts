@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PokemonRepository } from './pokemon.repository';
 import { CreatePokemonDto } from './dtos/create-pokemon.dto';
 import { Pokemon } from '@prisma/client';
+import { FindManyPokemonsQueryDto } from './dtos/find-many-pokemons-query.dto';
+import { PaginationResponse } from '../commons/pagination.response';
 
 @Injectable()
 export class PokemonService {
@@ -11,8 +13,10 @@ export class PokemonService {
     return this.pokemonsRepository.createOne(data);
   }
 
-  async findMany(): Promise<Pokemon[]> {
-    return this.pokemonsRepository.findMany();
+  async findMany(
+    query: FindManyPokemonsQueryDto,
+  ): Promise<PaginationResponse<Pokemon>> {
+    return this.pokemonsRepository.findMany(query);
   }
 
   async updateOne(
