@@ -43,4 +43,9 @@ export class PokemonController {
   async deleteOne(@Param('id') id: number): Promise<void> {
     return this.pokemonService.deleteOne(id);
   }
+
+  @Post('import/:id')
+  async importFromPokeApi(@Param('id') id: number): Promise<Pokemon> {
+    return this.pokemonService.importFromPokeApi(id);
+  }
 }
