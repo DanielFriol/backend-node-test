@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { PokemonService } from './pokemon.service';
 import { CreatePokemonDto } from './dtos/create-pokemon.dto';
+import { UpdatePokemonDto } from './dtos/update-pokemon.dto';
 
 @Controller('pokemons')
 export class PokemonController {
@@ -14,5 +15,10 @@ export class PokemonController {
   @Get()
   async findMany() {
     return this.pokemonService.findMany();
+  }
+
+  @Patch(':id')
+  async updateOne(@Param('id') id: number, @Body() dto: UpdatePokemonDto) {
+    return this.pokemonService.updateOne(id, dto);
   }
 }
