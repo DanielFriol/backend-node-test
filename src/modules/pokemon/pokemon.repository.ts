@@ -22,8 +22,8 @@ export class PokemonRepository {
     const { page, limit, name, type, order } = query;
 
     const where = {
-      name: name ? { contains: query.name.toLowerCase() } : undefined,
-      type: type ? { equals: query.type.toUpperCase() } : undefined,
+      name: name ? { contains: name.toLowerCase() } : undefined,
+      type: type ? { equals: type.toUpperCase() } : undefined,
     };
 
     const skip = (page - 1) * limit;
