@@ -30,7 +30,5 @@ export class CacheService {
     await Promise.all(keysToClear.map((key) => this.cacheManager.del(key)));
 
     keysToClear.forEach((key) => this.cachedKeys.delete(key));
-
-    console.log(`Cleared cache for prefix "${prefix}"`, keysToClear);
   }
 }
