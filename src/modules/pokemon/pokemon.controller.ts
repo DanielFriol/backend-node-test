@@ -14,6 +14,7 @@ import { UpdatePokemonDto } from './dtos/update-pokemon.dto';
 import { FindManyPokemonsQueryDto } from './dtos/find-many-pokemons-query.dto';
 import { PaginationResponse } from '../commons/pagination.response';
 import { Pokemon } from '@prisma/client';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('pokemons')
 export class PokemonController {
@@ -25,6 +26,7 @@ export class PokemonController {
   }
 
   @Get()
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   async findMany(
     @Query() query: FindManyPokemonsQueryDto,
   ): Promise<PaginationResponse<Pokemon>> {
@@ -45,6 +47,7 @@ export class PokemonController {
   }
 
   @Post('import/:id')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async importFromPokeApi(@Param('id') id: number): Promise<Pokemon> {
     return this.pokemonService.importFromPokeApi(id);
   }

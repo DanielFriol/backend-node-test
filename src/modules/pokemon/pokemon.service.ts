@@ -1,5 +1,6 @@
 import {
   BadGatewayException,
+  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -14,6 +15,10 @@ import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { isAxiosError } from 'axios';
 import { TypeService } from '../type/type.service';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+
+const POKEMON_CACHING_KEY = 'pokemons:list';
 
 @Injectable()
 export class PokemonService {
@@ -22,17 +27,30 @@ export class PokemonService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
     private readonly typeService: TypeService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   async createOne(data: CreatePokemonDto): Promise<Pokemon> {
     await this.typeService.findManyByNames(data.types);
-    return this.pokemonsRepository.createOne(data);
+    const pokemon = await this.pokemonsRepository.createOne(data);
+    await this.clearListCache();
+    return pokemon;
   }
 
   async findMany(
     query: FindManyPokemonsQueryDto,
   ): Promise<PaginationResponse<Pokemon>> {
-    return this.pokemonsRepository.findMany(query);
+    const cacheKey = `${POKEMON_CACHING_KEY}:${JSON.stringify(query)}`;
+    const cached =
+      await this.cacheManager.get<PaginationResponse<Pokemon>>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const pokemons = await this.pokemonsRepository.findMany(query);
+    await this.cacheManager.set(cacheKey, pokemons);
+
+    return pokemons;
   }
 
   async updateOne(
@@ -42,7 +60,9 @@ export class PokemonService {
     await this.typeService.findManyByNames(data.types);
     await this.checkIfPokemonExists(id);
 
-    return this.pokemonsRepository.updateOne(id, data);
+    const updatedPokemon = await this.pokemonsRepository.updateOne(id, data);
+    await this.clearListCache();
+    return updatedPokemon;
   }
 
   private async checkIfPokemonExists(id: number) {
@@ -55,7 +75,8 @@ export class PokemonService {
 
   async deleteOne(id: number): Promise<void> {
     await this.checkIfPokemonExists(id);
-    return this.pokemonsRepository.deleteOne(id);
+    this.pokemonsRepository.deleteOne(id);
+    await this.clearListCache();
   }
 
   private async getFromPokeApi(id: number): Promise<CreatePokemonDto> {
@@ -99,6 +120,31 @@ export class PokemonService {
     // Create the types in the database if they don't exist to successfully import the pokemon
     await this.typeService.upsertTypes(createPokemonDto.types);
 
-    return this.pokemonsRepository.upsertOne(id, createPokemonDto);
+    const pokemon = await this.pokemonsRepository.upsertOne(
+      id,
+      createPokemonDto,
+    );
+    await this.clearListCache();
+    return pokemon;
+  }
+
+  private async clearListCache() {
+    try {
+      const allKeys = this.cacheManager.stores.flatMap((s) =>
+        Array.from(s.store.keys()),
+      );
+
+      const pokemonKeys = allKeys.filter((key: string) =>
+        key.includes(POKEMON_CACHING_KEY),
+      );
+
+      await Promise.all(
+        pokemonKeys.map((key: string) =>
+          this.cacheManager.del(key.replace('keyv:', '')),
+        ),
+      );
+    } catch {
+      await this.cacheManager.clear();
+    }
   }
 }
