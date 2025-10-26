@@ -12,7 +12,19 @@ export class PokemonRepository {
 
   async createOne(data: CreatePokemonDto): Promise<Pokemon> {
     return this.prismaService.pokemon.create({
-      data,
+      data: {
+        name: data.name,
+        types: {
+          connect: data.types.map((type) => ({ name: type })),
+        },
+      },
+      include: {
+        types: {
+          select: {
+            name: true,
+          },
+        },
+      },
     });
   }
 
@@ -37,6 +49,13 @@ export class PokemonRepository {
         },
         skip,
         take: limit,
+        include: {
+          types: {
+            select: {
+              name: true,
+            },
+          },
+        },
       }),
     ]);
 
@@ -49,7 +68,21 @@ export class PokemonRepository {
   async updateOne(id: number, data: UpdatePokemonDto): Promise<Pokemon> {
     return this.prismaService.pokemon.update({
       where: { id },
-      data,
+      data: {
+        name: data.name,
+        types: data.types
+          ? {
+              set: data.types.map((type) => ({ name: type })),
+            }
+          : undefined,
+      },
+      include: {
+        types: {
+          select: {
+            name: true,
+          },
+        },
+      },
     });
   }
 
@@ -66,10 +99,26 @@ export class PokemonRepository {
   }
 
   async upsertOne(id: number, data: CreatePokemonDto): Promise<Pokemon> {
+    const parsedData = {
+      name: data.name,
+      types: data.types.length
+        ? {
+            connect: data.types.map((type) => ({ name: type })),
+          }
+        : undefined,
+    };
+
     return this.prismaService.pokemon.upsert({
       where: { id },
-      update: data,
-      create: data,
+      update: parsedData,
+      create: parsedData,
+      include: {
+        types: {
+          select: {
+            name: true,
+          },
+        },
+      },
     });
   }
 }
