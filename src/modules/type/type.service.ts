@@ -5,13 +5,28 @@ import {
 } from '@nestjs/common';
 import { TypeRepository } from './type.repository';
 import { Type } from '@prisma/client';
+import { CacheService } from '../cache/cache.service';
+
+const TYPE_CACHE_LIST_KEY = 'types:list';
 
 @Injectable()
 export class TypeService {
-  constructor(private readonly typeRepository: TypeRepository) {}
+  constructor(
+    private readonly typeRepository: TypeRepository,
+    private readonly cacheService: CacheService,
+  ) {}
 
-  async findAll() {
-    return this.typeRepository.findAll();
+  async findAll(): Promise<Type[]> {
+    const cacheKey = `${TYPE_CACHE_LIST_KEY}`;
+
+    const cachedTypes = await this.cacheService.get<Type[]>(cacheKey);
+    if (cachedTypes) {
+      return cachedTypes;
+    }
+
+    const types = await this.typeRepository.findAll();
+    await this.cacheService.set(cacheKey, types);
+    return types;
   }
 
   async createOne(name: string): Promise<Type> {
@@ -21,7 +36,9 @@ export class TypeService {
       throw new BadRequestException('Type with this name already exists');
     }
 
-    return this.typeRepository.createOne(name);
+    const type = await this.typeRepository.createOne(name);
+    await this.cacheService.clearByPrefix(TYPE_CACHE_LIST_KEY);
+    return type;
   }
 
   async updateOne(id: number, name: string): Promise<Type> {
@@ -37,7 +54,9 @@ export class TypeService {
       throw new BadRequestException('Type with this name already exists');
     }
 
-    return this.typeRepository.updateOne(id, name);
+    const updatedType = this.typeRepository.updateOne(id, name);
+    await this.cacheService.clearByPrefix(TYPE_CACHE_LIST_KEY);
+    return updatedType;
   }
 
   async deleteOne(id: number): Promise<void> {
@@ -47,7 +66,8 @@ export class TypeService {
       throw new NotFoundException('Type not found');
     }
 
-    return this.typeRepository.deleteOne(id);
+    await this.typeRepository.deleteOne(id);
+    await this.cacheService.clearByPrefix(TYPE_CACHE_LIST_KEY);
   }
 
   async findManyByNames(types: string[]): Promise<Type[]> {
@@ -59,6 +79,7 @@ export class TypeService {
   }
 
   async upsertTypes(types: string[]): Promise<void> {
-    return this.typeRepository.upsertTypes(types);
+    await this.typeRepository.upsertTypes(types);
+    await this.cacheService.clearByPrefix(TYPE_CACHE_LIST_KEY);
   }
 }

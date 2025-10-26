@@ -9,9 +9,25 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PokemonModule } from './modules/pokemon/pokemon.module';
 import { ConfigModule } from '@nestjs/config';
 import { TypeModule } from './modules/type/type.module';
+import { CacheModule } from '@nestjs/cache-manager';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { CustomCacheModule } from './modules/cache/cache.module';
 
 @Module({
   imports: [
+    CacheModule.register({
+      isGlobal: true,
+      ttl: 300000,
+      namespace: '',
+    }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 10,
+      },
+    ]),
+
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -24,6 +40,7 @@ import { TypeModule } from './modules/type/type.module';
         path: join(process.cwd(), 'src/graphql.ts'),
       },
     }),
+    CustomCacheModule,
     HelloModule,
     PrismaModule,
     TypeOrmModule.forRoot({
@@ -37,6 +54,11 @@ import { TypeModule } from './modules/type/type.module';
     TypeModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

@@ -14,6 +14,9 @@ import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { isAxiosError } from 'axios';
 import { TypeService } from '../type/type.service';
+import { CacheService } from '../cache/cache.service';
+
+const POKEMON_CACHE_LIST_KEY = 'pokemons:list';
 
 @Injectable()
 export class PokemonService {
@@ -22,17 +25,30 @@ export class PokemonService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
     private readonly typeService: TypeService,
+    private readonly cacheService: CacheService,
   ) {}
 
   async createOne(data: CreatePokemonDto): Promise<Pokemon> {
     await this.typeService.findManyByNames(data.types);
-    return this.pokemonsRepository.createOne(data);
+    const pokemon = await this.pokemonsRepository.createOne(data);
+    await this.cacheService.clearByPrefix(POKEMON_CACHE_LIST_KEY);
+    return pokemon;
   }
 
   async findMany(
     query: FindManyPokemonsQueryDto,
   ): Promise<PaginationResponse<Pokemon>> {
-    return this.pokemonsRepository.findMany(query);
+    const cacheKey = `${POKEMON_CACHE_LIST_KEY}:${JSON.stringify(query)}`;
+    const cached =
+      await this.cacheService.get<PaginationResponse<Pokemon>>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const pokemons = await this.pokemonsRepository.findMany(query);
+    await this.cacheService.set(cacheKey, pokemons);
+
+    return pokemons;
   }
 
   async updateOne(
@@ -42,7 +58,9 @@ export class PokemonService {
     await this.typeService.findManyByNames(data.types);
     await this.checkIfPokemonExists(id);
 
-    return this.pokemonsRepository.updateOne(id, data);
+    const updatedPokemon = await this.pokemonsRepository.updateOne(id, data);
+    await this.cacheService.clearByPrefix(POKEMON_CACHE_LIST_KEY);
+    return updatedPokemon;
   }
 
   private async checkIfPokemonExists(id: number) {
@@ -55,7 +73,8 @@ export class PokemonService {
 
   async deleteOne(id: number): Promise<void> {
     await this.checkIfPokemonExists(id);
-    return this.pokemonsRepository.deleteOne(id);
+    this.pokemonsRepository.deleteOne(id);
+    await this.cacheService.clearByPrefix(POKEMON_CACHE_LIST_KEY);
   }
 
   private async getFromPokeApi(id: number): Promise<CreatePokemonDto> {
@@ -99,6 +118,11 @@ export class PokemonService {
     // Create the types in the database if they don't exist to successfully import the pokemon
     await this.typeService.upsertTypes(createPokemonDto.types);
 
-    return this.pokemonsRepository.upsertOne(id, createPokemonDto);
+    const pokemon = await this.pokemonsRepository.upsertOne(
+      id,
+      createPokemonDto,
+    );
+    await this.cacheService.clearByPrefix(POKEMON_CACHE_LIST_KEY);
+    return pokemon;
   }
 }

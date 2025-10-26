@@ -5,9 +5,10 @@ import { PokemonRepository } from './pokemon.repository';
 import { PrismaModule } from '../prisma/prisma.module';
 import { HttpModule } from '@nestjs/axios';
 import { TypeModule } from '../type/type.module';
+import { CustomCacheModule } from '../cache/cache.module';
 
 @Module({
-  imports: [PrismaModule, TypeModule, HttpModule],
+  imports: [PrismaModule, TypeModule, CustomCacheModule, HttpModule],
   controllers: [PokemonController],
   providers: [PokemonService, PokemonRepository],
 })
