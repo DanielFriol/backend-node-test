@@ -12,6 +12,7 @@ import { TypeModule } from './modules/type/type.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { CustomCacheModule } from './modules/cache/cache.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { APP_GUARD } from '@nestjs/core';
         path: join(process.cwd(), 'src/graphql.ts'),
       },
     }),
+    CustomCacheModule,
     HelloModule,
     PrismaModule,
     TypeOrmModule.forRoot({

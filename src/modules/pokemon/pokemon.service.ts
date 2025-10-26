@@ -1,6 +1,5 @@
 import {
   BadGatewayException,
-  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -15,10 +14,9 @@ import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { isAxiosError } from 'axios';
 import { TypeService } from '../type/type.service';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
+import { CacheService } from '../cache/cache.service';
 
-const POKEMON_CACHING_KEY = 'pokemons:list';
+const POKEMON_CACHE_LIST_KEY = 'pokemons:list';
 
 @Injectable()
 export class PokemonService {
@@ -27,28 +25,28 @@ export class PokemonService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
     private readonly typeService: TypeService,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private readonly cacheService: CacheService,
   ) {}
 
   async createOne(data: CreatePokemonDto): Promise<Pokemon> {
     await this.typeService.findManyByNames(data.types);
     const pokemon = await this.pokemonsRepository.createOne(data);
-    await this.clearListCache();
+    await this.cacheService.clearByPrefix(POKEMON_CACHE_LIST_KEY);
     return pokemon;
   }
 
   async findMany(
     query: FindManyPokemonsQueryDto,
   ): Promise<PaginationResponse<Pokemon>> {
-    const cacheKey = `${POKEMON_CACHING_KEY}:${JSON.stringify(query)}`;
+    const cacheKey = `${POKEMON_CACHE_LIST_KEY}:${JSON.stringify(query)}`;
     const cached =
-      await this.cacheManager.get<PaginationResponse<Pokemon>>(cacheKey);
+      await this.cacheService.get<PaginationResponse<Pokemon>>(cacheKey);
     if (cached) {
       return cached;
     }
 
     const pokemons = await this.pokemonsRepository.findMany(query);
-    await this.cacheManager.set(cacheKey, pokemons);
+    await this.cacheService.set(cacheKey, pokemons);
 
     return pokemons;
   }
@@ -61,7 +59,7 @@ export class PokemonService {
     await this.checkIfPokemonExists(id);
 
     const updatedPokemon = await this.pokemonsRepository.updateOne(id, data);
-    await this.clearListCache();
+    await this.cacheService.clearByPrefix(POKEMON_CACHE_LIST_KEY);
     return updatedPokemon;
   }
 
@@ -76,7 +74,7 @@ export class PokemonService {
   async deleteOne(id: number): Promise<void> {
     await this.checkIfPokemonExists(id);
     this.pokemonsRepository.deleteOne(id);
-    await this.clearListCache();
+    await this.cacheService.clearByPrefix(POKEMON_CACHE_LIST_KEY);
   }
 
   private async getFromPokeApi(id: number): Promise<CreatePokemonDto> {
@@ -124,27 +122,7 @@ export class PokemonService {
       id,
       createPokemonDto,
     );
-    await this.clearListCache();
+    await this.cacheService.clearByPrefix(POKEMON_CACHE_LIST_KEY);
     return pokemon;
-  }
-
-  private async clearListCache() {
-    try {
-      const allKeys = this.cacheManager.stores.flatMap((s) =>
-        Array.from(s.store.keys()),
-      );
-
-      const pokemonKeys = allKeys.filter((key: string) =>
-        key.includes(POKEMON_CACHING_KEY),
-      );
-
-      await Promise.all(
-        pokemonKeys.map((key: string) =>
-          this.cacheManager.del(key.replace('keyv:', '')),
-        ),
-      );
-    } catch {
-      await this.cacheManager.clear();
-    }
   }
 }
