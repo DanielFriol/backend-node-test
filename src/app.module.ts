@@ -8,6 +8,7 @@ import { PrismaModule } from './modules/prisma/prisma.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PokemonModule } from './modules/pokemon/pokemon.module';
 import { ConfigModule } from '@nestjs/config';
+import { TypeModule } from './modules/type/type.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { ConfigModule } from '@nestjs/config';
       migrations: ['../typeorm/migrations/*.ts'],
     }),
     PokemonModule,
+    TypeModule,
   ],
   controllers: [],
   providers: [],

@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import { ArrayMinSize, IsArray, IsNotEmpty, IsString } from 'class-validator';
 
 export class CreatePokemonDto {
@@ -8,5 +9,6 @@ export class CreatePokemonDto {
   @IsArray()
   @IsString({ each: true })
   @ArrayMinSize(1, { message: 'O Pokémon precisa ter pelo menos um tipo.' })
+  @Transform(({ value }) => value.map((v: string) => v.toUpperCase()))
   types: string[];
 }
