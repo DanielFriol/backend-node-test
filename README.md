@@ -51,6 +51,15 @@ or
 $ yarn prisma generate
 
 ```
+## Variáveis de Ambiente (`.env`)
+
+Para que a aplicação funcione, é **necessário** criar um arquivo `.env` na raiz do projeto. Este arquivo armazena as configurações, como a URL de APIs externas.
+
+O projeto inclui um arquivo de exemplo para facilitar a configuração. Para criar o seu, basta copiar o exemplo com o seguinte comando:
+
+```bash
+cp .env.example .env
+```
 
 ## Running the app
 
