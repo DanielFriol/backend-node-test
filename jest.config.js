@@ -6,4 +6,11 @@ module.exports = {
   transform: {
     '^.+\\.(t|j)s$': 'ts-jest',
   },
+  coveragePathIgnorePatterns: [
+    '/node_modules/',
+    '.dto.ts',
+    '.entity.ts',
+    '.module.ts',
+    'main.ts',
+  ],
 };

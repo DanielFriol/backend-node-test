@@ -17,3 +17,4 @@ graphql.ts
 
 # Environment variables
 .env
+coverage
