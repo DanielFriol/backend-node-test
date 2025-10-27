@@ -35,7 +35,9 @@ export class PokemonRepository {
 
     const where = {
       name: name ? { contains: name.toLowerCase() } : undefined,
-      type: type ? { equals: type.toUpperCase() } : undefined,
+      types: type
+        ? { some: { name: { equals: type.toUpperCase() } } }
+        : undefined,
     };
 
     const skip = (page - 1) * limit;
